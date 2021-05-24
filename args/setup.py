@@ -4,6 +4,7 @@ from .dataset import augmentations_args, dataset_args
 from .methods import (
     barlow_args,
     byol_args,
+    dino_args,
     mocov2plus_args,
     nnclr_args,
     simclr_args,
@@ -33,6 +34,9 @@ def parse_args_contrastive():
 
     method_parser = subparser.add_parser("byol")
     byol_args(method_parser)
+
+    method_parser = subparser.add_parser("dino")
+    dino_args(method_parser)
 
     method_parser = subparser.add_parser("mocov2plus")
     mocov2plus_args(method_parser)

@@ -96,9 +96,6 @@ class BYOL(Model):
         # for datasets with unsupervised data
         output = torch.cat((output1, output2))
         target = target.repeat(2)
-        index = target >= 0
-        output = output[index]
-        target = target[index]
 
         # ------- classification loss -------
         class_loss = F.cross_entropy(output, target, ignore_index=-1)

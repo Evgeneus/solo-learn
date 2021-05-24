@@ -14,6 +14,7 @@ try:
     from swav import SwAV
     from vicreg import VICReg
     from nnclr import NNCLR
+    from dino import DINO
 except:
     from .linear import LinearModel
     from .simclr import SimCLR
@@ -24,6 +25,7 @@ except:
     from .swav import SwAV
     from .vicreg import VICReg
     from .nnclr import NNCLR
+    from .dino import DINO
 
 from nvidia.dali.plugin.pytorch import DALIGenericIterator, LastBatchPolicy
 
@@ -300,4 +302,8 @@ class DaliSwAV(SwAV, ContrastiveABC):
 
 
 class DaliNNCLR(NNCLR, ContrastiveABC):
+    pass
+
+
+class DaliDINO(DINO, ContrastiveABC):
     pass

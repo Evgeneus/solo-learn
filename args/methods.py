@@ -1,3 +1,6 @@
+import distutils
+
+
 def barlow_args(parser):
     # projector
     parser.add_argument("--encoding_dim", type=int, default=2048)
@@ -19,6 +22,28 @@ def byol_args(parser):
     # momentum settings
     parser.add_argument("--base_tau_momentum", default=0.99, type=float)
     parser.add_argument("--final_tau_momentum", default=1.0, type=float)
+
+
+def dino_args(parser):
+    # optimization settings
+    parser.add_argument("--clip_grad", type=float, default=0)
+    parser.add_argument("--freeze_last_layer", type=int, default=1)
+
+    # dino head
+    parser.add_argument("--encoding_dim", type=int, default=256)
+    parser.add_argument("--hidden_dim", type=int, default=2048)
+    parser.add_argument("--num_prototypes", type=int, default=4096)
+    parser.add_argument("--norm_last_layer", type=distutils.util.strtobool, default=True)
+
+    # momentum settings
+    parser.add_argument("--base_tau_momentum", default=0.9995, type=float)
+    parser.add_argument("--final_tau_momentum", default=1.0, type=float)
+
+    # temperature settings
+    parser.add_argument("--student_temperature", type=float, default=0.1)
+    parser.add_argument("--teacher_temperature", default=0.07, type=float)
+    parser.add_argument("--warmup_teacher_temperature", default=0.04, type=float)
+    parser.add_argument("--warmup_teacher_temperature_epochs", default=50, type=int)
 
 
 def mocov2plus_args(parser):

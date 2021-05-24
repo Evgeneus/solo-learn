@@ -1,0 +1,25 @@
+python3 ../../main_contrastive.py \
+    --dataset imagenet100 \
+    --encoder resnet18 \
+    --data_folder /data/datasets/ \
+    --train_dir imagenet-100/train \
+    --val_dir imagenet-100/val \
+    --epochs 500 \
+    --optimizer sgd \
+    --lars \
+    --scheduler warmup_cosine \
+    --lr 0.3 \
+    --weight_decay 1e-6 \
+    --batch_size 16 \
+    --gpus 0 \
+    --num_workers 10 \
+    --brightness 0.4 \
+    --contrast 0.4 \
+    --saturation 0.2 \
+    --hue 0.1 \
+    --asymmetric_augmentations \
+    --name nn2clr-T_0.2-500ep \
+    --project contrastive_learning \
+    --dali \
+    --entity unitn-mhug \
+    dino \

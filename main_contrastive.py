@@ -11,6 +11,7 @@ from methods.byol import BYOL
 from methods.dali import (
     DaliBarlowTwins,
     DaliBYOL,
+    DaliDINO,
     DaliMoCoV2Plus,
     DaliNNCLR,
     DaliSimCLR,
@@ -19,6 +20,7 @@ from methods.dali import (
     DaliVICReg,
 )
 from methods.mocov2plus import MoCoV2Plus
+from methods.dino import DINO
 from methods.nnclr import NNCLR
 from methods.simclr import SimCLR
 from methods.simsiam import SimSiam
@@ -80,6 +82,11 @@ def main():
             model = DaliNNCLR(args)
         else:
             model = NNCLR(args)
+    elif args.method == "dino":
+        if args.dali:
+            model = DaliDINO(args)
+        else:
+            model = DINO(args)
 
     # contrastive dataloader
     if not args.dali:
