@@ -1,19 +1,18 @@
-# This README is heavily outdated and we are planning on releasing a much clearer one, together with pretrained models.
+# solo-learn
 
-# Contrastive learning methods
-
-Third-party pytorch implementations of contrastive learning methods that supports extra stuff (see "What is available" section).
+A library of self-supervised methods for unsupervised visual representation learning powered by Pytorch Lightning
 
 ## Methods available:
 * [Barlow Twins](https://arxiv.org/abs/2103.03230)
 * [BYOL](https://arxiv.org/abs/2006.07733)
 * [MoCo-V2](https://arxiv.org/abs/2003.04297)
 * [SimCLR](https://arxiv.org/abs/2002.05709)
-* SimCLR + [Supervised Contrastive Learning](https://arxiv.org/abs/2004.11362)
 * [SimSiam](https://arxiv.org/abs/2011.10566)
 * [Swav](https://arxiv.org/abs/2006.09882)
 * [VICReg](https://arxiv.org/abs/2105.04906)
 * [NNCLR](https://arxiv.org/abs/2104.14548)
+* [Supervised Contrastive Learning](https://arxiv.org/abs/2004.11362)
+
 
 ## What is available?
 * Online linear evaluation via stop-gradient
@@ -45,12 +44,6 @@ Third-party pytorch implementations of contrastive learning methods that support
 
 **NOTE:** Heavily outdated. Will be updated soon.
 
-## Notes:
-* Barlow Twins and SimCLR work with basically the same hyperparameters
-* SimSiam is very hyperparameter-dependent, it can easily collapse with a lr too high and there are a number of tricks that improve performance a lot, e.g. making the lr of the projection head fixed (as described in the paper). Also, the online/offline classifier training doesn't play nice with the same settings as SimCLR.
-* SimSiam was tested with 2048 as output for the projection/prediction heads, but maybe it would be better to scale this to 512 (because of the resnet18) and then change the bottleneck on the prediction head from 512 to something like 128. **This is indeed the case.**
-* I think that selecting a better lr to the online classifier training for SimSiam can make numbers closer, but I tried with 3.0 (and lower values) and it just converges to a much worse number (this doesn't change the offline linear eval, ofc).
-
 ## Requirements
 * torch
 * tqdm
@@ -60,13 +53,13 @@ Third-party pytorch implementations of contrastive learning methods that support
 * lightning-bolts
 * einops
 
-**NOTE:** if you are using CUDA 10.X use `nvidia-dali-cuda100` in `requirements.txt`.
 
 ## Installation
 
 ```
 pip install -r requirements.txt
 ```
+**NOTE:** if you are using CUDA 10.X use `nvidia-dali-cuda100` in `requirements.txt`.
 
 ## Pretraining
 
@@ -126,5 +119,3 @@ python3 main_linear.py \
     --project contrastive_learning
 ```
 Or follow `bash_files/run_linear.sh`
-
-**NOTE:** Each method requires their own parameters, so be sure to check their original papers. Although, in our experience this doesn't change so much.
