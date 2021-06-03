@@ -21,16 +21,32 @@ class BYOL(BaseModel):
 
         self.last_step = 0
 
-        # projector
-        self.projector = nn.Sequential(
+        # projector 1
+        self.projector1 = nn.Sequential(
             nn.Linear(self.features_size, proj_hidden_dim),
             nn.BatchNorm1d(proj_hidden_dim),
             nn.ReLU(),
             nn.Linear(proj_hidden_dim, output_dim),
         )
 
-        # predictor
-        self.predictor = nn.Sequential(
+        # projector 2
+        self.projector2 = nn.Sequential(
+            nn.Linear(self.features_size, proj_hidden_dim),
+            nn.BatchNorm1d(proj_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(proj_hidden_dim, output_dim),
+        )
+
+        # predictor 1
+        self.predictor1 = nn.Sequential(
+            nn.Linear(output_dim, pred_hidden_dim),
+            nn.BatchNorm1d(pred_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(pred_hidden_dim, output_dim),
+        )
+
+        # predictor 2
+        self.predictor2 = nn.Sequential(
             nn.Linear(output_dim, pred_hidden_dim),
             nn.BatchNorm1d(pred_hidden_dim),
             nn.ReLU(),
@@ -47,14 +63,23 @@ class BYOL(BaseModel):
             self.momentum_encoder.maxpool = nn.Identity()
         initialize_momentum_params(self.encoder, self.momentum_encoder)
 
-        # instantiate and initialize momentum projector
-        self.momentum_projector = nn.Sequential(
+        # instantiate and initialize momentum projector1
+        self.momentum_projector1 = nn.Sequential(
             nn.Linear(self.features_size, proj_hidden_dim),
             nn.BatchNorm1d(proj_hidden_dim),
             nn.ReLU(),
             nn.Linear(proj_hidden_dim, output_dim),
         )
-        initialize_momentum_params(self.projector, self.momentum_projector)
+
+        # instantiate and initialize momentum projector2
+        self.momentum_projector2 = nn.Sequential(
+            nn.Linear(self.features_size, proj_hidden_dim),
+            nn.BatchNorm1d(proj_hidden_dim),
+            nn.ReLU(),
+            nn.Linear(proj_hidden_dim, output_dim),
+        )
+        initialize_momentum_params(self.projector1, self.momentum_projector1)
+        initialize_momentum_params(self.projector2, self.momentum_projector2)
 
         # momentum updater
         self.momentum_updater = MomentumUpdater(base_tau_momentum, final_tau_momentum)
@@ -76,26 +101,45 @@ class BYOL(BaseModel):
 
     @property
     def extra_learnable_params(self):
-        return [{"params": self.projector.parameters()}, {"params": self.predictor.parameters()}]
+        return [{"params": self.projector1.parameters()}, {"params": self.predictor1.parameters()},
+                {"params": self.projector2.parameters()}, {"params": self.predictor2.parameters()}]
 
-    def forward(self, X):
+    def on_after_backward(self, *args):
+        for pred in [self.predictor1, self.predictor2,
+                     self.projection1, self.projection2]:
+            for params in pred.parameters():
+                params.grad *= 2.
+
+    def forward(self, X, view_id):
         out = super().forward(X)
-        z = self.projector(out["feat"])
-        p = self.predictor(z)
+        if view_id == 1:
+            z = self.projector1(out["feat"])
+            p = self.predictor1(z)
+        elif view_id == 2:
+            z = self.projector2(out["feat"])
+            p = self.predictor2(z)
+        else:
+            raise ValueError('Wrong view_id value')
         return {**out, "z": z, "p": p}
 
     @torch.no_grad()
-    def forward_momentum(self, X):
+    def forward_momentum(self, X, view_id):
         features_momentum = self.momentum_encoder(X)
-        z_momentum = self.momentum_projector(features_momentum)
+        if view_id == 1:
+            z_momentum = self.momentum_projector1(features_momentum)
+        elif view_id == 2:
+            z_momentum = self.momentum_projector2(features_momentum)
+        else:
+            raise ValueError('Wrong view_id value')
+
         return z_momentum
 
     def training_step(self, batch, batch_idx):
         indexes, (X1, X2), target = batch
 
         # forward online encoder
-        out1 = self(X1)
-        out2 = self(X2)
+        out1 = self(X1, 1)
+        out2 = self(X2, 2)
 
         z1 = out1["z"]
         z2 = out2["z"]
@@ -105,8 +149,8 @@ class BYOL(BaseModel):
         logits2 = out2["logits"]
 
         # forward momentum encoder
-        z1_momentum = self.forward_momentum(X1)
-        z2_momentum = self.forward_momentum(X2)
+        z1_momentum = self.forward_momentum(X1, 2)
+        z2_momentum = self.forward_momentum(X2, 1)
 
         # ------- contrastive loss -------
         neg_cos_sim = byol_loss_func(p1, z2_momentum) / 2 + byol_loss_func(p2, z1_momentum) / 2
@@ -141,8 +185,8 @@ class BYOL(BaseModel):
             self.log("tau", self.momentum_updater.cur_tau)
             # update momentum encoder
             self.momentum_updater.update(
-                online_nets=[self.encoder, self.projector],
-                momentum_nets=[self.momentum_encoder, self.momentum_projector],
+                online_nets=[self.encoder, self.projector1, self.projector2],
+                momentum_nets=[self.momentum_encoder, self.momentum_projector1, self.momentum_projector2],
                 cur_step=self.trainer.global_step * self.trainer.accumulate_grad_batches,
                 max_steps=len(self.trainer.train_dataloader) * self.trainer.max_epochs,
             )
