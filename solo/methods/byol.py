@@ -110,7 +110,7 @@ class BYOL(BaseModel):
             for params in pred.parameters():
                 params.grad *= 2.
 
-    def forward(self, X, view_id):
+    def forward(self, X, view_id=-1):
         out = super().forward(X)
         if view_id == 1:
             z = self.projector1(out["feat"])
@@ -118,6 +118,8 @@ class BYOL(BaseModel):
         elif view_id == 2:
             z = self.projector2(out["feat"])
             p = self.predictor2(z)
+        elif view_id == -1:
+            return out
         else:
             raise ValueError('Wrong view_id value')
         return {**out, "z": z, "p": p}
