@@ -151,8 +151,8 @@ class BYOL(BaseModel):
         logits2 = out2["logits"]
 
         # forward momentum encoder
-        z1_momentum = self.forward_momentum(X1, 2)
-        z2_momentum = self.forward_momentum(X2, 1)
+        z1_momentum = self.forward_momentum(X1, 1)
+        z2_momentum = self.forward_momentum(X2, 2)
 
         # ------- contrastive loss -------
         neg_cos_sim = byol_loss_func(p1, z2_momentum) / 2 + byol_loss_func(p2, z1_momentum) / 2
