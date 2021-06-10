@@ -29,13 +29,13 @@ class BYOL(BaseModel):
             nn.Linear(proj_hidden_dim, output_dim),
         )
 
-        # projector 2
-        self.projector2 = nn.Sequential(
-            nn.Linear(self.features_size, proj_hidden_dim),
-            nn.BatchNorm1d(proj_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(proj_hidden_dim, output_dim),
-        )
+        # # projector 2
+        # self.projector2 = nn.Sequential(
+        #     nn.Linear(self.features_size, proj_hidden_dim),
+        #     nn.BatchNorm1d(proj_hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(proj_hidden_dim, output_dim),
+        # )
 
         # predictor 1
         self.predictor1 = nn.Sequential(
@@ -71,15 +71,15 @@ class BYOL(BaseModel):
             nn.Linear(proj_hidden_dim, output_dim),
         )
 
-        # instantiate and initialize momentum projector2
-        self.momentum_projector2 = nn.Sequential(
-            nn.Linear(self.features_size, proj_hidden_dim),
-            nn.BatchNorm1d(proj_hidden_dim),
-            nn.ReLU(),
-            nn.Linear(proj_hidden_dim, output_dim),
-        )
+        # # instantiate and initialize momentum projector2
+        # self.momentum_projector2 = nn.Sequential(
+        #     nn.Linear(self.features_size, proj_hidden_dim),
+        #     nn.BatchNorm1d(proj_hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(proj_hidden_dim, output_dim),
+        # )
         initialize_momentum_params(self.projector1, self.momentum_projector1)
-        initialize_momentum_params(self.projector2, self.momentum_projector2)
+        # initialize_momentum_params(self.projector2, self.momentum_projector2)
 
         # momentum updater
         self.momentum_updater = MomentumUpdater(base_tau_momentum, final_tau_momentum)
@@ -102,11 +102,11 @@ class BYOL(BaseModel):
     @property
     def extra_learnable_params(self):
         return [{"params": self.projector1.parameters()}, {"params": self.predictor1.parameters()},
-                {"params": self.projector2.parameters()}, {"params": self.predictor2.parameters()}]
+                {"params": self.predictor2.parameters()}]
 
     def on_after_backward(self, *args):
         for pred in [self.predictor1, self.predictor2,
-                     self.projector1, self.projector2]:
+                     self.projector1]:
             for params in pred.parameters():
                 params.grad *= 2.
 
@@ -116,7 +116,7 @@ class BYOL(BaseModel):
             z = self.projector1(out["feat"])
             p = self.predictor1(z)
         elif view_id == 2:
-            z = self.projector2(out["feat"])
+            z = self.projector1(out["feat"])
             p = self.predictor2(z)
         elif view_id == -1:
             return out
@@ -130,7 +130,7 @@ class BYOL(BaseModel):
         if view_id == 1:
             z_momentum = self.momentum_projector1(features_momentum)
         elif view_id == 2:
-            z_momentum = self.momentum_projector2(features_momentum)
+            z_momentum = self.momentum_projector1(features_momentum)
         else:
             raise ValueError('Wrong view_id value')
 
@@ -190,8 +190,8 @@ class BYOL(BaseModel):
             self.log("tau", self.momentum_updater.cur_tau)
             # update momentum encoder
             self.momentum_updater.update(
-                online_nets=[self.encoder, self.projector1, self.projector2],
-                momentum_nets=[self.momentum_encoder, self.momentum_projector1, self.momentum_projector2],
+                online_nets=[self.encoder, self.projector1],
+                momentum_nets=[self.momentum_encoder, self.momentum_projector1],
                 cur_step=self.trainer.global_step * self.trainer.accumulate_grad_batches,
                 max_steps=len(self.trainer.train_dataloader) * self.trainer.max_epochs,
             )
