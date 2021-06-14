@@ -105,8 +105,7 @@ class BYOL(BaseModel):
                 {"params": self.predictor2.parameters()}]
 
     def on_after_backward(self, *args):
-        for pred in [self.predictor1, self.predictor2,
-                     self.projector1]:
+        for pred in [self.predictor1, self.predictor2]:
             for params in pred.parameters():
                 params.grad *= 2.
 
